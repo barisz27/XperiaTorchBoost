@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Xperia Torch Boost</string>
+
+    <!--
+    Mediafire username and password:
+
+    username = evelinaljames@dayrep.com;
+    password = Num6aimae3ee;
+
+    mediafire url = https://www.mediafire.com/;
+    -->
+
+    <string name="extreme_just_torch_download_url">http://download1491.mediafire.com/iao715hlwtrg/nc3bzee4l8mjj0r/flashled_calc_parameters.cfg</string>
+    <string name="extreme_download_url">http://download1079.mediafire.com/uj5q5tizr5bg/5ri5jhzqq4945dm/flashled_calc_parameters.cfg</string>
+    <string name="medium_just_torch_download_url">http://download937.mediafire.com/0i60y952pxng/r4ym1lf2pfe9mxl/flashled_calc_parameters.cfg</string>
+    <string name="medium_download_url">http://download1585.mediafire.com/lw1zl1kyhwpg/u95h244373glrbc/flashled_calc_parameters.cfg</string>
+
+    <string-array name="selections">
+        <item>Medium Boost</item>
+        <item>Extreme Boost</item>
+        <item>Low Boost</item>
+    </string-array>
+
+</resources>
