@@ -1,25 +1,3 @@
 <resources>
     <string name="app_name">Xperia Torch Boost</string>
-
-    <!--
-    Mediafire username and password:
-
-    username = evelinaljames@dayrep.com;
-    password = Num6aimae3ee;
-
-    mediafire url = https://www.mediafire.com/;
-
-    <string name="extreme_just_torch_download_url">https://drive.google.com/uc?export=download&id=0B6h8FtMQuShSWHdGSE9vWTBHUXM</string>
-    <string name="extreme_download_url">https://drive.google.com/uc?export=download&id=0B6h8FtMQuShSWUp4dWt2cGZaUGc</string>
-    <string name="medium_just_torch_download_url">https://drive.google.com/uc?export=download&id=0B6h8FtMQuShSOUVtaEZJS1p0TW8</string>
-    <string name="medium_download_url">https://drive.google.com/uc?export=download&id=0B6h8FtMQuShSQlV5d2lnMFN2bWc</string>
-    -->
-
-    <string-array name="selections">
-        <item>Medium Boost</item>
-        <item>Extreme Boost</item>
-        <item>Low Boost</item>
-    </string-array>
-
-
 </resources>

@@ -1,6 +1,5 @@
 package com.android.xperiatorchboost;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.app.ProgressDialog;
@@ -20,14 +19,9 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
 
 import static android.icu.lang.UCharacter.GraphemeClusterBreak.V;
 import static com.android.xperiatorchboost.R.layout.main;
