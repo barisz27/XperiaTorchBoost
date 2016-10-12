@@ -20,9 +20,14 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
 
 import static android.icu.lang.UCharacter.GraphemeClusterBreak.V;
 import static com.android.xperiatorchboost.R.layout.main;
@@ -52,6 +57,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Log.d(TAG, "Yedek bulunamadı");
         }
 
+        if (new File(String.valueOf(String.valueOf(Environment.getExternalStorageDirectory().getPath()) + "/") + "Download/flashled_calc_parameters.cfg").exists()) {
+            bApply.setText("Apply");
+            Log.d(TAG, "İndirilmiş");
+        }
+
         boolean mNetworkAvailable = checkConnection();
 
         if (!mNetworkAvailable) {
@@ -67,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (view == bApply) {
             new BackgroundDownloadTask(MainActivity.this).execute();
             Log.d(TAG, "Arkaplan işlemi başladı");
-        } else if (view == bBackup){
+        } else if (view == bBackup) {
             if (new File(String.valueOf(String.valueOf(Environment.getExternalStorageDirectory().getPath()) + "/") + "flashled_calc_parameters.cfg").exists()) {
                 restoreTorch();
             } else {
@@ -82,22 +92,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         boolean checked = ((RadioButton) view).isChecked();
 
+        String[] urls = {
+                "https://drive.google.com/uc?export=download&id=0B6h8FtMQuShSWHdGSE9vWTBHUXM",
+                "https://drive.google.com/uc?export=download&id=0B6h8FtMQuShSWUp4dWt2cGZaUGc",
+                "https://drive.google.com/uc?export=download&id=0B6h8FtMQuShSOUVtaEZJS1p0TW8",
+                "https://drive.google.com/uc?export=download&id=0B6h8FtMQuShSQlV5d2lnMFN2bWc"};
+
         switch (view.getId()) {
             case R.id.rbJExtreme:
                 if (checked)
-                whichDownload = getResources().getString(R.string.extreme_just_torch_download_url);
+                    whichDownload = urls[0];
                 break;
             case R.id.rbExtreme:
                 if (checked)
-                whichDownload = getResources().getString(R.string.extreme_download_url);
+                    whichDownload = urls[1];
                 break;
             case R.id.rbJMedium:
                 if (checked)
-                whichDownload = getResources().getString(R.string.medium_just_torch_download_url);
+                    whichDownload = urls[2];
                 break;
             case R.id.rbMedium:
                 if (checked)
-                whichDownload = getResources().getString(R.string.medium_just_torch_download_url);
+                    whichDownload = urls[3];
                 break;
         }
     }
@@ -134,13 +150,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         @Override
         protected Void doInBackground(Void... params) {
-            if (!new File(String.valueOf(String.valueOf(Environment.getExternalStorageDirectory().getPath()) + "/") + "Download/flashled_calc_parameters.cfg").exists()) {
+            if (!new File(String.valueOf(Environment.getExternalStorageDirectory().getPath()) + "/" + "Download/flashled_calc_parameters.cfg").exists()) {
                 publishProgress("İndiriliyor");
-                try {
-                    ourSleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+
+
                 DownloadManager.Request downloadRequest = new DownloadManager.Request(Uri.parse(whichDownload));
 
                 downloadRequest.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "flashled_calc_parameters.cfg");
@@ -152,6 +165,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 dm.enqueue(downloadRequest);
 
+                try {
+                    ourSleep(2500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
                 Log.d(TAG, "İndiriliyor");
 
                 mDownloaded = true;
@@ -159,7 +178,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 publishProgress("Kopyalanıyor");
                 Log.d(TAG, "Dosya mevcut");
                 try {
-                    ourSleep(1000);
+                    ourSleep(1500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -179,7 +198,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         protected void onPostExecute(Void aVoid) {
             dialog.cancel();
-            if (mDownloaded){
+            if (mDownloaded) {
                 bApply.setText("Apply");
                 Toast.makeText(context, "Please wait until download finish\nThen click apply", Toast.LENGTH_LONG).show();
             } else {
@@ -214,7 +233,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         try {
             // root izni burada isteniyor..
             mSU = Runtime.getRuntime().exec("su");
-            Log.d(TAG, "Superuer yetkisi alınıdı");
+            Log.d(TAG, "Superuser yetkisi alındı");
             moveFile(sourcePath, destinationPath);
             this.mSU.waitFor();
         } catch (IOException e) {
@@ -231,7 +250,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         try {
             // root izni burada isteniyor..
             mSU = Runtime.getRuntime().exec("su");
-            Log.d(TAG, "Superuer yetkisi alındı");
+            Log.d(TAG, "Superuser yetkisi alındı");
             DataOutputStream os = new DataOutputStream(this.mSU.getOutputStream());
             os.writeBytes("mount -o remount,rw /system /system" + "\n");
             os.writeBytes("cp " + sourcePath + " " + destinationPath + "\n");
@@ -246,7 +265,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Toast.makeText(MainActivity.this, destinationPath + " dizinine kaydedildi", Toast.LENGTH_LONG).show();
     }
 
-    private void restoreTorch(){
+    private void restoreTorch() {
         String sourcePath = "/mnt/sdcard/flashled_calc_parameters.cfg";
         String destinationPath = "/system/etc/flashled_calc_parameters.cfg";
 
@@ -260,7 +279,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } catch (InterruptedException ignored) {
         }
 
-        Toast.makeText(MainActivity.this, destinationPath + " dizinine kaydedildi", Toast.LENGTH_LONG).show();
+        new AlertDialog.Builder(MainActivity.this)
+                .setTitle("Uygulandı")
+                .setCancelable(false)
+                .setMessage("Yeniden başlatmak istiyor musunuz?")
+                .setPositiveButton("Evet", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        rebootPhone();
+                    }
+                }).setNegativeButton("Hayır", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        })
+                .show();
     }
 
     private void ourSleep(int sleepTime) throws InterruptedException {
@@ -293,9 +327,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         os.flush();
     }
 
-    private void rebootPhone(){
+    private void rebootPhone() {
         try {
-            Process proc = Runtime.getRuntime().exec(new String[] { "su", "-c", "reboot" });
+            Process proc = Runtime.getRuntime().exec(new String[]{"su", "-c", "reboot"});
             proc.waitFor();
         } catch (Exception ex) {
             Log.i(TAG, "Yeniden başlatılamıyor", ex);
