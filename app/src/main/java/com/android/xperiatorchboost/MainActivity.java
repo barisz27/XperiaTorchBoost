@@ -23,7 +23,6 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 
-import static android.icu.lang.UCharacter.GraphemeClusterBreak.V;
 import static com.android.xperiatorchboost.R.layout.main;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -39,7 +38,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(main);
+        setContentView(R.layout.main);
 
         onFinishInflate();
 
