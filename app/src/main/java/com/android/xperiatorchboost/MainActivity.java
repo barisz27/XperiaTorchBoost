@@ -23,15 +23,14 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 
-import static com.android.xperiatorchboost.R.layout.main;
-
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "TAG_MAINACTIVITY";
 
-    public Button bApply, bBackup;
+    public Button bApply, bBackup, bReboot;
     private TextView tvNetworkError;
     private String whichDownload;
+    private boolean nothingSelected = true;
 
     private Process mSU = null;
 
@@ -43,7 +42,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         onFinishInflate();
 
         if (new File(String.valueOf(String.valueOf(Environment.getExternalStorageDirectory().getPath()) + "/") + "flashled_calc_parameters.cfg").exists()) {
-            bBackup.setText("Restore");
+            bBackup.setText(getResources().getString(R.string.restore_text));
             Log.d(TAG, "Yedek var");
         } else {
             bApply.setEnabled(false);
@@ -51,7 +50,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         if (new File(String.valueOf(String.valueOf(Environment.getExternalStorageDirectory().getPath()) + "/") + "Download/flashled_calc_parameters.cfg").exists()) {
-            bApply.setText("Apply");
+            bApply.setText(getResources().getString(R.string.dialog_apply_text));
             Log.d(TAG, "İndirilmiş");
         }
 
@@ -68,7 +67,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View view) {
         if (view == bApply) {
-            new BackgroundDownloadTask(MainActivity.this).execute();
+            if (nothingSelected)
+                Toast.makeText(MainActivity.this, getResources().getString(R.string.toast_selectone_text), Toast.LENGTH_LONG).show();
+            else
+                new BackgroundDownloadTask(MainActivity.this).execute();
             Log.d(TAG, "Arkaplan işlemi başladı");
         } else if (view == bBackup) {
             if (new File(String.valueOf(String.valueOf(Environment.getExternalStorageDirectory().getPath()) + "/") + "flashled_calc_parameters.cfg").exists()) {
@@ -78,15 +80,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Log.d(TAG, "Yedek alındı");
             }
             bApply.setEnabled(true);
+        } else if (view == bReboot) {
+            new AlertDialog.Builder(MainActivity.this)
+                    .setCancelable(false)
+                    .setMessage(getResources().getString(R.string.dialog_reallyreboot_text))
+                    .setPositiveButton(getResources().getString(R.string.dialog_yes_text), new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            rebootPhoneLikeSystem();
+                        }
+                    }).setNegativeButton(getResources().getString(R.string.dialog_no_text), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            })
+                    .show();
+
+
         }
     }
 
     public void onRadioButtonClicked(View view) {
 
         boolean checked = ((RadioButton) view).isChecked();
+        nothingSelected = false;
 
-        String[] urls = {
-                "https://drive.google.com/uc?export=download&id=0B6h8FtMQuShSWHdGSE9vWTBHUXM",
+        String[] urls = {"https://drive.google.com/uc?export=download&id=0B6h8FtMQuShSWHdGSE9vWTBHUXM",
                 "https://drive.google.com/uc?export=download&id=0B6h8FtMQuShSWUp4dWt2cGZaUGc",
                 "https://drive.google.com/uc?export=download&id=0B6h8FtMQuShSOUVtaEZJS1p0TW8",
                 "https://drive.google.com/uc?export=download&id=0B6h8FtMQuShSQlV5d2lnMFN2bWc"};
@@ -135,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             dialog = new ProgressDialog(context);
 
-            dialog.setMessage("Lütfen bekleyin");
+            dialog.setMessage(getResources().getString(R.string.dialog_pleasewait_text));
             dialog.setCancelable(true);
 
             dialog.show();
@@ -144,7 +164,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         protected Void doInBackground(Void... params) {
             if (!new File(String.valueOf(Environment.getExternalStorageDirectory().getPath()) + "/" + "Download/flashled_calc_parameters.cfg").exists()) {
-                publishProgress("İndiriliyor");
+                publishProgress(getResources().getString(R.string.dialog_downloading_text));
 
 
                 DownloadManager.Request downloadRequest = new DownloadManager.Request(Uri.parse(whichDownload));
@@ -192,21 +212,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         protected void onPostExecute(Void aVoid) {
             dialog.cancel();
             if (mDownloaded) {
-                bApply.setText("Apply");
-                Toast.makeText(context, "Please wait until download finish\nThen click apply", Toast.LENGTH_LONG).show();
+                bApply.setText(getResources().getString(R.string.dialog_apply_text));
+                Toast.makeText(context, getResources().getString(R.string.toast_clickapply_text), Toast.LENGTH_LONG).show();
             } else {
-                bApply.setText("Download");
+                bApply.setText(getResources().getString(R.string.download_text));
                 if (mCopied) {
                     new AlertDialog.Builder(context)
-                            .setTitle("Uygulandı")
+                            .setTitle(getResources().getString(R.string.dialog_applied_text))
                             .setCancelable(false)
-                            .setMessage("Yeniden başlatmak istiyor musunuz?")
-                            .setPositiveButton("Evet", new DialogInterface.OnClickListener() {
+                            .setMessage(getResources().getString(R.string.dialog_reboot_text))
+                            .setPositiveButton(getResources().getString(R.string.dialog_yes_text), new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialogInterface, int i) {
-                                    rebootPhone();
+                                    rebootPhoneLikeSystem();
                                 }
-                            }).setNegativeButton("Hayır", new DialogInterface.OnClickListener() {
+                            }).setNegativeButton(getResources().getString(R.string.dialog_no_text), new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.dismiss();
@@ -273,15 +293,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         new AlertDialog.Builder(MainActivity.this)
-                .setTitle("Uygulandı")
+                .setTitle(getResources().getString(R.string.dialog_applied_text))
                 .setCancelable(false)
-                .setMessage("Yeniden başlatmak istiyor musunuz?")
-                .setPositiveButton("Evet", new DialogInterface.OnClickListener() {
+                .setMessage(getResources().getString(R.string.dialog_reboot_text))
+                .setPositiveButton(getResources().getString(R.string.dialog_yes_text), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        rebootPhone();
+                        rebootPhoneLikeSystem();
                     }
-                }).setNegativeButton("Hayır", new DialogInterface.OnClickListener() {
+                }).setNegativeButton(getResources().getString(R.string.dialog_no_text), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
@@ -297,8 +317,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void onFinishInflate() {
         bApply = (Button) findViewById(R.id.bApply);
         bBackup = (Button) findViewById(R.id.bBackup);
+        bReboot = (Button) findViewById(R.id.bReboot);
         bApply.setOnClickListener(this);
         bBackup.setOnClickListener(this);
+        bReboot.setOnClickListener(this);
         tvNetworkError = (TextView) findViewById(R.id.tvInternetError);
     }
 
@@ -320,10 +342,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         os.flush();
     }
 
+    // eski yöntem
+    /*
     private void rebootPhone() {
         try {
             Process proc = Runtime.getRuntime().exec(new String[]{"su", "-c", "reboot"});
             proc.waitFor();
+        } catch (Exception ex) {
+            Log.i(TAG, "Yeniden başlatılamıyor", ex);
+        }
+    }
+    */
+
+    // [YENI] power menuden dokunulmuş gibi..
+    private void rebootPhoneLikeSystem() {
+        try {
+            mSU = Runtime.getRuntime().exec("su");
+            DataOutputStream os = new DataOutputStream(this.mSU.getOutputStream());
+            os.writeBytes("svc power reboot" + "\n");
+            os.writeBytes("exit\n");
+            this.mSU.waitFor();
         } catch (Exception ex) {
             Log.i(TAG, "Yeniden başlatılamıyor", ex);
         }

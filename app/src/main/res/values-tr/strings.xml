@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Xperia Torch Boost</string>
+    <string name="backup_text">Yedekle</string>
+    <string name="dialog_applied_text">Uygulandı</string>
+    <string name="dialog_downloading_text">İndiriliyor</string>
+    <string name="dialog_no_text">Hayır</string>
+    <string name="dialog_pleasewait_text">Lütfen bekleyin</string>
+    <string name="dialog_reboot_text">Yeniden başlatmak istiyor musunuz?</string>
+    <string name="dialog_yes_text">Evet</string>
+    <string name="download_text">İndir</string>
+    <string name="reboot_text">Şimdi yeniden başlat</string>
+    <string name="restore_text">Geri yükle</string>
+    <string name="select_one_text">Aşağıdan bir tane seçin</string>
+    <string name="dialog_reallyreboot_text">Yeniden başlatmak istediğinize emin misiniz?</string>
+    <string name="dialog_copying_text">Kopyalanıyor</string>
+    <string name="dialog_apply_text">Uygula</string>
+    <string name="toast_clickapply_text">Lütfen indirme bitene kadar bekleyin ardından UYGULA\'ya basın</string>
+    <string name="toast_selectone_text">Lütfen indirmek için bir tane seçin</string>
+</resources>

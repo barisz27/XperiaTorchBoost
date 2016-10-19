@@ -1,3 +1,19 @@
 <resources>
     <string name="app_name">Xperia Torch Boost</string>
+    <string name="select_one_text">Select one from below</string>
+    <string name="restore_text">Restore</string>
+    <string name="backup_text">Backup</string>
+    <string name="download_text">Download</string>
+    <string name="reboot_text">Reboot now</string>
+    <string name="toast_clickapply_text">Please wait until download finish\nThen click APPLY</string>
+    <string name="toast_selectone_text">Please select a version to download</string>
+    <string name="dialog_applied_text">Applied</string>
+    <string name="dialog_apply_text">Apply</string>
+    <string name="dialog_pleasewait_text">Please wait</string>
+    <string name="dialog_downloading_text">Downloading</string>
+    <string name="dialog_reboot_text">Do you want to reboot now?</string>
+    <string name="dialog_yes_text">Yes</string>
+    <string name="dialog_copying_text">Copying</string>
+    <string name="dialog_no_text">No</string>
+    <string name="dialog_reallyreboot_text">Do you really want to reboot?</string>
 </resources>
