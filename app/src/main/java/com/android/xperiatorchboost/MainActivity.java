@@ -42,8 +42,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private String whichDownload;
     private String path = "/sdcard/Download/flashled_calc_parameters.cfg";
     private boolean nothingSelected = true;
-
-    // declare the dialog as a member field of your activity
     private ProgressDialog mProgressDialog;
 
     private Process mSU = null;
