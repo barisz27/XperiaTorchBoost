@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -22,7 +24,10 @@
     <RadioGroup
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/rgModes">
+        android:id="@+id/rgModes"
+        android:layout_below="@+id/textView2"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true">
 
 
         <RadioButton
@@ -55,13 +60,29 @@
 
     </RadioGroup>
 
+
+    <android.support.design.widget.FloatingActionButton
+        android:src="@drawable/restart"
+        app:fabSize="normal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/fabRestart"
+        android:onClick="onClick"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        app:backgroundTint="?attr/colorPrimary" />
+
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="5dp"
-        android:id="@+id/linearLayout">
+        android:id="@+id/linearLayout"
+        android:layout_marginTop="15dp"
+        android:layout_below="@+id/rgModes"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true">
 
         <Button
             android:layout_width="match_parent"
@@ -73,30 +94,25 @@
         <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/download_text"
+            android:text="@string/dialog_apply_text"
             android:id="@+id/bApply"
             android:layout_weight="1"/>
 
 
     </LinearLayout>
 
-    <Button
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/reboot_text"
-        android:id="@+id/bReboot"
-        android:textColor="@color/color_red"/>
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="No internet connection"
+        android:layout_margin="5dp"
         android:id="@+id/tvInternetError"
         android:layout_gravity="center_horizontal"
         android:textStyle="bold"
         android:textColor="#ed1f1f"
-        android:layout_marginTop="15dp"
-        android:visibility="invisible" />
+        android:visibility="invisible"
+        android:layout_below="@+id/linearLayout"
+        android:layout_centerHorizontal="true" />
 
-</LinearLayout>
+</RelativeLayout>

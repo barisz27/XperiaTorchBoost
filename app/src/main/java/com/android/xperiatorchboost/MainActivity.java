@@ -11,26 +11,40 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.PowerManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+import static android.R.id.copy;
+import static android.R.id.input;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "TAG_MAINACTIVITY";
 
-    public Button bApply, bBackup, bReboot;
+    public Button bApply, bBackup;
     private TextView tvNetworkError;
     private String whichDownload;
+    private String path = "/sdcard/Download/flashled_calc_parameters.cfg";
     private boolean nothingSelected = true;
+
+    // declare the dialog as a member field of your activity
+    private ProgressDialog mProgressDialog;
 
     private Process mSU = null;
 
@@ -40,18 +54,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.main);
 
         onFinishInflate();
-
-        if (new File(String.valueOf(String.valueOf(Environment.getExternalStorageDirectory().getPath()) + "/") + "flashled_calc_parameters.cfg").exists()) {
+        if (new File(String.valueOf(Environment.getExternalStorageDirectory().getPath() + "/") + "torch_backup/flashled_calc_parameters.cfg").exists()) {
             bBackup.setText(getResources().getString(R.string.restore_text));
             Log.d(TAG, "Yedek var");
         } else {
             bApply.setEnabled(false);
             Log.d(TAG, "Yedek bulunamadı");
-        }
-
-        if (new File(String.valueOf(String.valueOf(Environment.getExternalStorageDirectory().getPath()) + "/") + "Download/flashled_calc_parameters.cfg").exists()) {
-            bApply.setText(getResources().getString(R.string.dialog_apply_text));
-            Log.d(TAG, "İndirilmiş");
         }
 
         boolean mNetworkAvailable = checkConnection();
@@ -70,23 +78,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (nothingSelected)
                 Toast.makeText(MainActivity.this, getResources().getString(R.string.toast_selectone_text), Toast.LENGTH_LONG).show();
             else
-                new BackgroundDownloadTask(MainActivity.this).execute();
+                startDownloadTask();
             Log.d(TAG, "Arkaplan işlemi başladı");
         } else if (view == bBackup) {
-            if (new File(String.valueOf(String.valueOf(Environment.getExternalStorageDirectory().getPath()) + "/") + "flashled_calc_parameters.cfg").exists()) {
+            if (new File(String.valueOf(String.valueOf(Environment.getExternalStorageDirectory().getPath()) + "/") + "torch_backup/flashled_calc_parameters.cfg").exists()) {
                 restoreTorch();
             } else {
                 backupTorch();
+                bApply.setEnabled(true);
+                bBackup.setText(getResources().getString(R.string.restore_text));
                 Log.d(TAG, "Yedek alındı");
             }
-            bApply.setEnabled(true);
-        } else if (view == bReboot) {
+        } else if(view.getId() == R.id.fabRestart) {
             new AlertDialog.Builder(MainActivity.this)
                     .setCancelable(false)
                     .setMessage(getResources().getString(R.string.dialog_reallyreboot_text))
                     .setPositiveButton(getResources().getString(R.string.dialog_yes_text), new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
+                            dialogInterface.dismiss();
                             rebootPhoneLikeSystem();
                         }
                     }).setNegativeButton(getResources().getString(R.string.dialog_no_text), new DialogInterface.OnClickListener() {
@@ -96,7 +106,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             })
                     .show();
-
 
         }
     }
@@ -139,108 +148,131 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return info != null && info.isAvailable();
     }
 
-    public class BackgroundDownloadTask extends AsyncTask<Void, String, Void> {
+    private void startDownloadTask() {
+        // instantiate it within the onCreate method
+        mProgressDialog = new ProgressDialog(MainActivity.this);
+        mProgressDialog.setMessage(getResources().getString(R.string.dialog_downloading_text));
+        mProgressDialog.setIndeterminate(true);
+        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        mProgressDialog.setCancelable(true);
 
-        private ProgressDialog dialog;
+        // execute this when the downloader must be fired
+        final DownloadTask downloadTask = new DownloadTask(MainActivity.this);
+        downloadTask.execute(whichDownload);
+
+        mProgressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                downloadTask.cancel(true);
+            }
+        });
+    }
+
+    // usually, subclasses of AsyncTask are declared inside the activity class.
+    // that way, you can easily modify the UI thread from here
+    private class DownloadTask extends AsyncTask<String, Integer, String> {
+
         private Context context;
-        private boolean mDownloaded = false;
-        private boolean mCopied = false;
+        private PowerManager.WakeLock mWakeLock;
 
-        BackgroundDownloadTask(Context context) {
+        DownloadTask(Context context) {
             this.context = context;
         }
 
         @Override
         protected void onPreExecute() {
-
-            dialog = new ProgressDialog(context);
-
-            dialog.setMessage(getResources().getString(R.string.dialog_pleasewait_text));
-            dialog.setCancelable(true);
-
-            dialog.show();
+            super.onPreExecute();
+            // take CPU lock to prevent CPU from going off if the user
+            // presses the power button during download
+            PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                    getClass().getName());
+            mWakeLock.acquire();
+            mProgressDialog.show();
         }
 
         @Override
-        protected Void doInBackground(Void... params) {
-            if (!new File(String.valueOf(Environment.getExternalStorageDirectory().getPath()) + "/" + "Download/flashled_calc_parameters.cfg").exists()) {
-                publishProgress(getResources().getString(R.string.dialog_downloading_text));
-
-
-                DownloadManager.Request downloadRequest = new DownloadManager.Request(Uri.parse(whichDownload));
-
-                downloadRequest.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "flashled_calc_parameters.cfg");
-                downloadRequest.allowScanningByMediaScanner();
-                downloadRequest.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-                Log.d(TAG, "İndirme isteği alındı");
-
-                DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-
-                dm.enqueue(downloadRequest);
-
+        protected String doInBackground(String... sUrl) {
+                InputStream input = null;
+                OutputStream output = null;
+                HttpURLConnection connection = null;
                 try {
-                    ourSleep(2500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    URL url = new URL(sUrl[0]);
+                    connection = (HttpURLConnection) url.openConnection();
+                    connection.connect();
+
+                    // expect HTTP 200 OK, so we don't mistakenly save error report
+                    // instead of the file
+                    if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                        return "Server returned HTTP " + connection.getResponseCode()
+                                + " " + connection.getResponseMessage();
+                    }
+
+                    // this will be useful to display download percentage
+                    // might be -1: server did not report the length
+                    int fileLength = connection.getContentLength();
+
+                    // download the file
+                    input = connection.getInputStream();
+                    output = new FileOutputStream(path);
+
+                    byte data[] = new byte[4096];
+                    long total = 0;
+                    int count;
+                    while ((count = input.read(data)) != -1) {
+                        // allow canceling with back button
+                        if (isCancelled()) {
+                            input.close();
+                            return null;
+                        }
+                        total += count;
+                        // publishing the progress....
+                        if (fileLength > 0) // only if total length is known
+                            publishProgress((int) (total * 100 / fileLength));
+                        output.write(data, 0, count);
+                    }
+                } catch (Exception e) {
+                    return e.toString();
+                } finally {
+                    try {
+                        if (output != null)
+                            output.close();
+                        if (input != null)
+                            input.close();
+                    } catch (IOException ignored) {
+                    }
+
+                    if (connection != null)
+                        connection.disconnect();
                 }
-
-                Log.d(TAG, "İndiriliyor");
-
-                mDownloaded = true;
-            } else {
-                publishProgress("Kopyalanıyor");
-                Log.d(TAG, "Dosya mevcut");
-                try {
-                    ourSleep(1500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                copyAndSetPermissions();
-                mCopied = true;
-                Log.d(TAG, "Kopyalandı ve izinler ayarlandı");
-            }
-
             return null;
         }
 
         @Override
-        protected void onProgressUpdate(String... values) {
-            dialog.setMessage(values[0]);
+        protected void onProgressUpdate(Integer... progress) {
+            super.onProgressUpdate(progress);
+            // if we get here, length is known, now set indeterminate to false
+            mProgressDialog.setIndeterminate(false);
+            mProgressDialog.setMax(100);
+            mProgressDialog.setProgress(progress[0]);
         }
 
         @Override
-        protected void onPostExecute(Void aVoid) {
-            dialog.cancel();
-            if (mDownloaded) {
-                bApply.setText(getResources().getString(R.string.dialog_apply_text));
-                Toast.makeText(context, getResources().getString(R.string.toast_clickapply_text), Toast.LENGTH_LONG).show();
-            } else {
-                bApply.setText(getResources().getString(R.string.download_text));
-                if (mCopied) {
-                    new AlertDialog.Builder(context)
-                            .setTitle(getResources().getString(R.string.dialog_applied_text))
-                            .setCancelable(false)
-                            .setMessage(getResources().getString(R.string.dialog_reboot_text))
-                            .setPositiveButton(getResources().getString(R.string.dialog_yes_text), new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    rebootPhoneLikeSystem();
-                                }
-                            }).setNegativeButton(getResources().getString(R.string.dialog_no_text), new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    })
-                            .show();
-                }
+        protected void onPostExecute(String result) {
+            mWakeLock.release();
+            mProgressDialog.dismiss();
+            if (result != null)
+                Toast.makeText(context,"Download error: "+result, Toast.LENGTH_LONG).show();
+            else {
+                copyAndSetPermissions(context);
             }
         }
+
     }
 
-    private void copyAndSetPermissions() {
+    private void copyAndSetPermissions(Context context) {
 
-        String sourcePath = "/mnt/sdcard/Download/flashled_calc_parameters.cfg";
+        String sourcePath = "/mnt" + path;
         String destinationPath = "/system/etc/flashled_calc_parameters.cfg";
 
         try {
@@ -253,12 +285,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             e.printStackTrace();
         } catch (InterruptedException ignored) {
         }
+        showCompeteDialog(context);
     }
 
     private void backupTorch() {
 
-        String destinationPath = "/mnt/sdcard/flashled_calc_parameters.cfg";
+        String destinationPath = String.valueOf(Environment.getExternalStorageDirectory().getPath() + "/") + "torch_backup/flashled_calc_parameters.cfg";
         String sourcePath = "/system/etc/flashled_calc_parameters.cfg";
+        String mDir = String.valueOf(Environment.getExternalStorageDirectory().getPath() + "/") + "torch_backup/";
 
         try {
             // root izni burada isteniyor..
@@ -266,6 +300,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Log.d(TAG, "Superuser yetkisi alındı");
             DataOutputStream os = new DataOutputStream(this.mSU.getOutputStream());
             os.writeBytes("mount -o remount,rw /system /system" + "\n");
+
+            if (!new File(String.valueOf(Environment.getExternalStorageDirectory().getPath() + "/") + "torch_backup/").exists())
+                os.writeBytes("mkdir " + mDir + "\n");
+
             os.writeBytes("cp " + sourcePath + " " + destinationPath + "\n");
             os.writeBytes("exit\n");
             os.flush();
@@ -279,7 +317,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void restoreTorch() {
-        String sourcePath = "/mnt/sdcard/flashled_calc_parameters.cfg";
+        String sourcePath = String.valueOf(Environment.getExternalStorageDirectory().getPath() + "/") + "torch_backup/flashled_calc_parameters.cfg";;
         String destinationPath = "/system/etc/flashled_calc_parameters.cfg";
 
         try {
@@ -310,17 +348,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 .show();
     }
 
-    private void ourSleep(int sleepTime) throws InterruptedException {
-        Thread.sleep(sleepTime);
-    }
-
     private void onFinishInflate() {
         bApply = (Button) findViewById(R.id.bApply);
         bBackup = (Button) findViewById(R.id.bBackup);
-        bReboot = (Button) findViewById(R.id.bReboot);
         bApply.setOnClickListener(this);
         bBackup.setOnClickListener(this);
-        bReboot.setOnClickListener(this);
         tvNetworkError = (TextView) findViewById(R.id.tvInternetError);
     }
 
@@ -342,20 +374,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         os.flush();
     }
 
-    // eski yöntem
-    /*
-    private void rebootPhone() {
-        try {
-            Process proc = Runtime.getRuntime().exec(new String[]{"su", "-c", "reboot"});
-            proc.waitFor();
-        } catch (Exception ex) {
-            Log.i(TAG, "Yeniden başlatılamıyor", ex);
-        }
-    }
-    */
-
     // [YENI] power menuden dokunulmuş gibi..
     private void rebootPhoneLikeSystem() {
+        MainActivity.this.finish();
         try {
             mSU = Runtime.getRuntime().exec("su");
             DataOutputStream os = new DataOutputStream(this.mSU.getOutputStream());
@@ -367,4 +388,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    private void showCompeteDialog(Context c) {
+        new AlertDialog.Builder(c)
+                .setTitle(getResources().getString(R.string.dilaog_title))
+                .setMessage(getResources().getString(R.string.dilaog_message))
+                .setPositiveButton(getResources().getString(R.string.dialog_yes_text), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        rebootPhoneLikeSystem();
+                    }
+                })
+                .setNegativeButton(getResources().getString(R.string.dialog_no_text), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                })
+                .setCancelable(false)
+                .show();
+    }
 }

@@ -7,6 +7,8 @@
     <string name="reboot_text">Reboot now</string>
     <string name="toast_clickapply_text">Please wait until download finish\nThen click APPLY</string>
     <string name="toast_selectone_text">Please select a version to download</string>
+    <string name="dilaog_title">Congratulations!</string>
+    <string name="dilaog_message">Operation completed successfully\nDo you want to reboot your device now?</string>
     <string name="dialog_applied_text">Applied</string>
     <string name="dialog_apply_text">Apply</string>
     <string name="dialog_pleasewait_text">Please wait</string>
